@@ -39,6 +39,7 @@ export class DataSetControl implements ComponentFramework.ReactControl<IInputs, 
     public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
         this._entityId = (context.mode as any).contextInfo.entityId;
         this._entityName = (context.mode as any).contextInfo.entityTypeName;
+        const sorting = context.parameters.dataset.sorting;
         const props: IDataSetProps = {
             dataset: context.parameters.dataset,
             formEntityName: this._entityName,

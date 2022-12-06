@@ -1,15 +1,15 @@
 import * as React from 'react';
 import {useState, useEffect} from 'react';
-import { DetailsList, IColumn } from '@fluentui/react';
+import { DetailsList, IColumn, IDetailsHeaderProps, IRenderFunction, Sticky, StickyPositionType  } from '@fluentui/react';
 import {IDataSetProps} from '../index.types' 
 
-const DataSet = ({dataset, columnsHasPercentage, formEntityName}: IDataSetProps) => {
+const DataSet = ({dataset, columnsHasPercentage, formEntityName}: IDataSetProps ) => {
 
   const [items, setItems] = useState<any[]>([]);
   const [columns, setColumns] = useState<IColumn[]>([]);
   //const [isSorted, setIsSorted] = useState<boolean>(false);
   //const [columnSorted, setColumnSorted] = useState({} as any);
-
+  const [sorting, setSorting] = useState([]);
 
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -103,6 +103,38 @@ const DataSet = ({dataset, columnsHasPercentage, formEntityName}: IDataSetProps)
   //   })
   // }
 
+  const _onRenderDetailsHeader = (props: IDetailsHeaderProps | undefined, defaultRender?: IRenderFunction<IDetailsHeaderProps>) => {
+    if (!defaultRender) {
+      return null;
+    }
+    return (
+      <Sticky stickyPosition={StickyPositionType.Header} isScrollSynced={true}>
+        {defaultRender!({...props!, onColumnClick: onColumnHerderClick })},
+      </Sticky>
+    );
+  };
+
+  const onColumnHerderClick = (ev: React.MouseEvent<HTMLElement>, column: IColumn) => {
+    const name = column?.fieldName ?? "";
+    onColumnClick(name);
+  };
+
+  const onColumnClick = (columnClicked: string) => {
+    const oldSorting = (sorting || []).find((sort: any) => sort.name == columnClicked);
+    const newValue  = {
+      name: columnClicked,
+      sortDirection: oldSorting != null ? (((oldSorting as any).sortDirection) === 0 ? 1 : 0) : 0
+    };
+    while ((dataset.sorting as any).length > 0) {
+      dataset.sorting.pop();
+    }
+    (dataset.sorting as any).push(newValue);
+    (dataset.paging as any).loadExactPage(1);
+    dataset.refresh();
+
+    setSorting((dataset.sorting as any));
+  }
+
   const myItemInvoked = React.useCallback((item: any) => {
     const record = dataset.records[item.key];
     dataset.openDatasetItem(record.getNamedReference());
@@ -118,6 +150,7 @@ const DataSet = ({dataset, columnsHasPercentage, formEntityName}: IDataSetProps)
           columns={columns}
           styles={{root: {overflow: 'auto', height: '100%', width: '100%'}}}
           onItemInvoked={myItemInvoked}
+          onRenderDetailsHeader={_onRenderDetailsHeader}
           
         /> 
       }
